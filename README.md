@@ -8,7 +8,7 @@ A Streamlit demo app for dairy farm shift timekeeping with:
 - Automatic checkout after the grace period when a worker is outside the fence
 - Manager dashboard protected by an admin PIN
 - Weekly hours, weekend overtime, hourly rates, and salary estimates in South African Rand
-- Local SQLite storage now, with a Supabase-ready data shape for later
+- Supabase storage when configured, with local SQLite fallback for demos
 
 ## Run
 
@@ -27,30 +27,35 @@ The default manager PIN is:
 
 Override it by setting:
 
-```bash
-export MANAGER_PIN="your-pin"
+```toml
+[app]
+MANAGER_PIN = "your-pin"
 ```
 
 ## Supabase
 
-The first version runs locally with SQLite at `.milkingtime/milkingtime.db`.
-When your Supabase project is ready, set these environment variables:
+The app follows the Streamlit Supabase setup pattern and reads credentials from
+`.streamlit/secrets.toml`. That file is ignored by git.
 
-```bash
-export SUPABASE_URL="https://your-project.supabase.co"
-export SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"
+```toml
+[connections.supabase]
+SUPABASE_URL = "https://your-project.supabase.co"
+SUPABASE_KEY = "your-supabase-api-key"
 ```
 
-The app currently keeps local storage as the active backend so the demo remains self-contained. The table design mirrors the records that should be created in Supabase:
+Before using Supabase, open the SQL editor in Supabase and run
+`supabase_schema.sql`. It creates:
 
 - `workers`
 - `face_embeddings`
 - `shifts`
 - `settings`
 
+If Streamlit secrets are missing, the app falls back to local SQLite storage at
+`.milkingtime/milkingtime.db`.
+
 ## Geo-fence
 
 Until the exact farm geo-fence is known, managers can configure a temporary center latitude, longitude, radius, and grace period in the manager screen. Workers enter their current latitude and longitude in the demo flow.
 
 For a production mobile app, browser/device GPS should be captured automatically and checked continuously or on a regular heartbeat.
-

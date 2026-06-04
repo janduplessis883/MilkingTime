@@ -8,12 +8,52 @@ import streamlit as st
 
 from face_engine import average_embeddings, best_match, image_to_embedding
 from geofence import GeoFence, is_inside_geofence
-from storage import Storage, supabase_configured, utc_now_iso
+from storage import SQLiteStorage, SupabaseStorage, supabase_configured, utc_now_iso
 
 
 st.set_page_config(page_title="MilkingTime", page_icon="MT", layout="wide")
 
-storage = Storage()
+
+def get_supabase_secrets() -> dict[str, str]:
+    try:
+        connection = st.secrets.get("connections", {}).get("supabase", {})
+        url = connection.get("SUPABASE_URL") or st.secrets.get("SUPABASE_URL")
+        key = connection.get("SUPABASE_KEY") or st.secrets.get("SUPABASE_KEY")
+    except Exception:
+        return {}
+    if not url or not key:
+        return {}
+    return {"SUPABASE_URL": url, "SUPABASE_KEY": key}
+
+
+def get_manager_pin() -> str:
+    try:
+        app_config = st.secrets.get("app", {})
+        return app_config.get(
+            "MANAGER_PIN",
+            st.secrets.get("MANAGER_PIN", os.getenv("MANAGER_PIN", "1234")),
+        )
+    except Exception:
+        return os.getenv("MANAGER_PIN", "1234")
+
+
+@st.cache_resource
+def init_storage(supabase_url: str | None, supabase_key: str | None):
+    if supabase_url and supabase_key:
+        return SupabaseStorage(supabase_url, supabase_key)
+    return SQLiteStorage()
+
+
+supabase_secrets = get_supabase_secrets()
+storage_error = None
+try:
+    storage = init_storage(
+        supabase_secrets.get("SUPABASE_URL"),
+        supabase_secrets.get("SUPABASE_KEY"),
+    )
+except Exception as exc:
+    storage_error = str(exc)
+    storage = SQLiteStorage()
 
 
 def parse_dt(value: str | None) -> datetime | None:
@@ -202,7 +242,7 @@ def shifts_dataframe() -> pd.DataFrame:
 def manager_screen() -> None:
     st.subheader("Manager")
     pin = st.text_input("Admin PIN", type="password")
-    if pin != os.getenv("MANAGER_PIN", "1234"):
+    if pin != get_manager_pin():
         st.warning("Enter the manager PIN to continue.")
         return
 
@@ -277,8 +317,14 @@ def manager_screen() -> None:
 
 def main() -> None:
     st.title("MilkingTime")
-    if supabase_configured():
-        st.caption("Supabase credentials detected. This MVP still uses local storage until the Supabase tables are created.")
+    if storage_error:
+        st.warning(
+            "Supabase credentials were found, but the app could not use the database yet. "
+            "Run supabase_schema.sql in Supabase, then restart Streamlit. "
+            "Using local demo storage for now."
+        )
+    elif supabase_configured(supabase_secrets):
+        st.caption("Connected to Supabase using Streamlit secrets.")
     else:
         st.caption("Running with local demo storage. Supabase can be connected once your project is ready.")
 
@@ -293,4 +339,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
