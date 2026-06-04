@@ -8,7 +8,7 @@ A Streamlit demo app for dairy farm shift timekeeping with:
 - Automatic checkout after the grace period when a worker is outside the fence
 - Manager dashboard protected by an admin PIN
 - Weekly hours, weekend overtime, hourly rates, and salary estimates in South African Rand
-- Supabase storage when configured, with local SQLite fallback for demos
+- Supabase storage for workers, face vectors, shifts, and settings
 
 ## Run
 
@@ -34,8 +34,8 @@ MANAGER_PIN = "your-pin"
 
 ## Supabase
 
-The app follows the Streamlit Supabase setup pattern and reads credentials from
-`.streamlit/secrets.toml`. That file is ignored by git.
+The app requires Supabase and reads credentials from `.streamlit/secrets.toml`.
+That file is ignored by git.
 
 ```toml
 [connections.supabase]
@@ -50,9 +50,6 @@ Before using Supabase, open the SQL editor in Supabase and run
 - `face_embeddings`
 - `shifts`
 - `settings`
-
-If Streamlit secrets are missing, the app falls back to local SQLite storage at
-`.milkingtime/milkingtime.db`.
 
 ## Geo-fence
 

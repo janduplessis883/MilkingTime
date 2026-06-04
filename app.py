@@ -8,7 +8,7 @@ import streamlit as st
 
 from face_engine import average_embeddings, best_match, image_to_embedding
 from geofence import GeoFence, is_inside_geofence
-from storage import SQLiteStorage, SupabaseStorage, supabase_configured, utc_now_iso
+from storage import SupabaseStorage, supabase_configured, utc_now_iso
 
 
 st.set_page_config(page_title="MilkingTime", page_icon="MT", layout="wide")
@@ -39,9 +39,11 @@ def get_manager_pin() -> str:
 
 @st.cache_resource
 def init_storage(supabase_url: str | None, supabase_key: str | None):
-    if supabase_url and supabase_key:
-        return SupabaseStorage(supabase_url, supabase_key)
-    return SQLiteStorage()
+    if not supabase_url or not supabase_key:
+        raise RuntimeError(
+            "Supabase is not configured. Add SUPABASE_URL and SUPABASE_KEY to Streamlit secrets."
+        )
+    return SupabaseStorage(supabase_url, supabase_key)
 
 
 supabase_secrets = get_supabase_secrets()
@@ -53,7 +55,7 @@ try:
     )
 except Exception as exc:
     storage_error = str(exc)
-    storage = SQLiteStorage()
+    storage = None
 
 
 def parse_dt(value: str | None) -> datetime | None:
@@ -67,6 +69,8 @@ def money(value: float) -> str:
 
 
 def current_fence() -> GeoFence:
+    if storage is None:
+        raise RuntimeError("Storage is not available.")
     settings = storage.get_settings()
     return GeoFence(
         center_lat=float(settings["farm_lat"]),
@@ -82,6 +86,8 @@ def recognize_from_camera(label: str) -> tuple[dict | None, float, list[float] |
         return None, 0.0, None
 
     embedding = image_to_embedding(photo.getvalue())
+    if storage is None:
+        return None, 0.0, embedding
     worker, score = best_match(embedding, storage.list_worker_embeddings())
     return worker, score, embedding
 
@@ -123,6 +129,10 @@ def apply_geofence_status(worker_id: str, lat: float, lon: float) -> str:
 
 
 def enrollment_screen() -> None:
+    if storage is None:
+        st.error("Supabase storage is not available. Check the setup message at the top of the app.")
+        return
+
     st.subheader("Worker self-enrollment")
     st.caption("Capture three face images so the app can build one recognition vector.")
 
@@ -167,6 +177,10 @@ def enrollment_screen() -> None:
 
 
 def worker_clock_screen() -> None:
+    if storage is None:
+        st.error("Supabase storage is not available. Check the setup message at the top of the app.")
+        return
+
     st.subheader("Worker clock in / out")
     st.caption("Use face scan and current location to manage a shift.")
 
@@ -211,6 +225,9 @@ def worker_clock_screen() -> None:
 
 
 def shifts_dataframe() -> pd.DataFrame:
+    if storage is None:
+        return pd.DataFrame()
+
     shifts = storage.list_shifts()
     if not shifts:
         return pd.DataFrame()
@@ -240,6 +257,10 @@ def shifts_dataframe() -> pd.DataFrame:
 
 
 def manager_screen() -> None:
+    if storage is None:
+        st.error("Supabase storage is not available. Check the setup message at the top of the app.")
+        return
+
     st.subheader("Manager")
     pin = st.text_input("Admin PIN", type="password")
     if pin != get_manager_pin():
@@ -318,15 +339,13 @@ def manager_screen() -> None:
 def main() -> None:
     st.title("MilkingTime")
     if storage_error:
-        st.warning(
-            "Supabase credentials were found, but the app could not use the database yet. "
-            "Run supabase_schema.sql in Supabase, then restart Streamlit. "
-            "Using local demo storage for now."
+        st.error(
+            "Supabase storage is required, but the app could not connect. "
+            "Add the Streamlit secrets and run supabase_schema.sql in Supabase, then restart Streamlit."
         )
+        st.code(storage_error)
     elif supabase_configured(supabase_secrets):
         st.caption("Connected to Supabase using Streamlit secrets.")
-    else:
-        st.caption("Running with local demo storage. Supabase can be connected once your project is ready.")
 
     tab_clock, tab_enroll, tab_manager = st.tabs(["Clock", "Enroll", "Manager"])
     with tab_clock:
