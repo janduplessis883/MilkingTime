@@ -56,7 +56,7 @@ def cosine_similarity(left: list[float], right: list[float]) -> float:
 def best_match(
     candidate: list[float],
     known_workers: list[dict],
-    threshold: float = 0.88,
+    threshold: float = 0.8,
 ) -> tuple[dict | None, float]:
     best_worker = None
     best_score = 0.0
@@ -70,3 +70,18 @@ def best_match(
         return best_worker, best_score
     return None, best_score
 
+
+def ranked_matches(
+    candidate: list[float],
+    known_workers: list[dict],
+    limit: int = 3,
+) -> list[dict]:
+    matches = []
+    for worker in known_workers:
+        matches.append(
+            {
+                "worker": worker,
+                "score": cosine_similarity(candidate, worker["embedding"]),
+            }
+        )
+    return sorted(matches, key=lambda match: match["score"], reverse=True)[:limit]

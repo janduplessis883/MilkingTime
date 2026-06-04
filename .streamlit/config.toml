@@ -1,11 +1,11 @@
 [theme]
-primaryColor = "#0096c7"
+primaryColor = "#ec5d4b"
 backgroundColor = "#ffffff"
-secondaryBackgroundColor = "#f5f5f7"
+secondaryBackgroundColor = "#f4f6f2"
 codeBackgroundColor = "#fbfbfd"
-textColor = "#434346"
-linkColor = "#bdbea3"
-borderColor = "#d2d2d7"
+textColor = "#0c1722"
+linkColor = "#ec5d4b"
+borderColor = "#d7ded8"
 showWidgetBorder = true
 showSidebarBorder = true
 baseRadius = "12px"
@@ -17,18 +17,18 @@ baseFontSize = 17
 baseFontWeight = 400
 headingFontSizes = ["48px", "32px", "24px", "20px", "17px", "14px"]
 headingFontWeights = [900, 900, 900, 900, 900, 900]
-chartCategoricalColors = ["#0071e3", "#34c759", "#ff9500", "#ff3b30", "#5856d6", "#af52de", "#00c7be"]
+chartCategoricalColors = ["#0c1722", "#ec5d4b", "#459bce", "#fae44c", "#ea39af", "#ea3c34", "#f3f8f3", "#5d6770", "#8fa6b1"]
 
-redColor = "#ae4f4d"
-orangeColor = "#fb8500"
-yellowColor = "#e4af6c"
-greenColor = "#a2a460"
-blueColor = "#659bb7"
+redColor = "#db6653"
+orangeColor = "#db6653"
+yellowColor = "#cba165"
+greenColor = "#436544"
+blueColor = "#777f75"
 violetColor = "#db2777"
 grayColor = "#a3a3a3"
 
 [theme.sidebar]
-backgroundColor = "#f5f5f7"
-secondaryBackgroundColor = "#ebebed"
-codeBackgroundColor = "#f5f5f7"
-borderColor = "#d2d2d7"
+backgroundColor = "#f4f6f2"
+secondaryBackgroundColor = "#edf2ed"
+codeBackgroundColor = "#f4f6f2"
+borderColor = "#d7ded8"

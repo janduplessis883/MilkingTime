@@ -79,6 +79,22 @@ class SupabaseStorage:
             query = query.eq("active", True)
         return query.execute().data
 
+    def update_worker_hourly_rate(self, worker_id: str, hourly_rate: float) -> None:
+        self.client.table("workers").update({"hourly_rate": hourly_rate}).eq(
+            "id", worker_id
+        ).execute()
+
+    def replace_worker_embedding(self, worker_id: str, embedding: list[float]) -> None:
+        self.client.table("face_embeddings").delete().eq("worker_id", worker_id).execute()
+        self.client.table("face_embeddings").insert(
+            {
+                "id": str(uuid4()),
+                "worker_id": worker_id,
+                "embedding": embedding,
+                "created_at": utc_now_iso(),
+            }
+        ).execute()
+
     def list_worker_embeddings(self) -> list[dict]:
         rows = (
             self.client.table("face_embeddings")
