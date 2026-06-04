@@ -51,6 +51,11 @@ Before using Supabase, open the SQL editor in Supabase and run
 - `shifts`
 - `settings`
 
+For the no-login demo flow, the setup SQL disables row-level security on these
+four tables so the Streamlit app can read and write with the publishable key.
+For production, replace this with proper authentication, manager roles, and
+stricter row-level security policies.
+
 ## Geo-fence
 
 Until the exact farm geo-fence is known, managers can configure a temporary center latitude, longitude, radius, and grace period in the manager screen. Workers enter their current latitude and longitude in the demo flow.

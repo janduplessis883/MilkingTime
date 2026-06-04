@@ -3,4 +3,4 @@ pandas>=2.2
 numpy>=1.26
 Pillow>=10.3
 supabase>=2.4
-
+streamlit-geolocation>=0.0.10

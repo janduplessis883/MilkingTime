@@ -42,3 +42,7 @@ values
     ('overtime_multiplier', '1.5')
 on conflict (key) do nothing;
 
+alter table workers disable row level security;
+alter table face_embeddings disable row level security;
+alter table shifts disable row level security;
+alter table settings disable row level security;

@@ -6,6 +6,11 @@ from datetime import datetime, timedelta, timezone
 import pandas as pd
 import streamlit as st
 
+try:
+    from streamlit_geolocation import streamlit_geolocation
+except ImportError:
+    streamlit_geolocation = None
+
 from face_engine import average_embeddings, best_match, image_to_embedding
 from geofence import GeoFence, is_inside_geofence
 from storage import SupabaseStorage, supabase_configured, utc_now_iso
@@ -66,6 +71,22 @@ def parse_dt(value: str | None) -> datetime | None:
 
 def money(value: float) -> str:
     return f"R {value:,.2f}"
+
+
+def extract_browser_location(location: object) -> tuple[float, float, float | None] | None:
+    if not isinstance(location, dict):
+        return None
+    lat = location.get("latitude")
+    lon = location.get("longitude")
+    accuracy = location.get("accuracy")
+    if lat is None or lon is None:
+        return None
+    return float(lat), float(lon), float(accuracy) if accuracy is not None else None
+
+
+def render_geofence_map(lat: float, lon: float) -> None:
+    map_df = pd.DataFrame([{"lat": lat, "lon": lon}])
+    st.map(map_df, latitude="lat", longitude="lon", zoom=15, size=80)
 
 
 def current_fence() -> GeoFence:
@@ -297,6 +318,35 @@ def manager_screen() -> None:
             }
         )
         st.success("Settings saved.")
+
+    st.markdown("#### Geo-fence centre")
+    render_geofence_map(farm_lat, farm_lon)
+
+    if streamlit_geolocation is None:
+        st.info("Install streamlit-geolocation to capture the browser location.")
+    else:
+        browser_location = streamlit_geolocation()
+        parsed_location = extract_browser_location(browser_location)
+        if parsed_location:
+            browser_lat, browser_lon, accuracy = parsed_location
+            accuracy_text = f" Accuracy: {accuracy:.0f} m." if accuracy is not None else ""
+            st.write(
+                f"Browser location: {browser_lat:.6f}, {browser_lon:.6f}.{accuracy_text}"
+            )
+            if st.button("Set geo-fence centre to browser location", type="primary"):
+                storage.update_settings(
+                    {
+                        "farm_lat": browser_lat,
+                        "farm_lon": browser_lon,
+                        "farm_radius_m": radius,
+                        "grace_minutes": grace,
+                        "overtime_multiplier": overtime_multiplier,
+                    }
+                )
+                st.success("Geo-fence centre updated from browser location.")
+                st.rerun()
+        else:
+            st.caption("Use the location button above to capture this browser's current position.")
 
     workers = storage.list_workers(include_inactive=True)
     st.markdown("#### Workers")
